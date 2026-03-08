@@ -1669,8 +1669,17 @@ async function receiveEmail(
 	}
 
 	// Parse threading headers from incoming email
+	// Strip angle brackets from message IDs since postal-mime returns raw RFC 2822
+	// values (e.g. "<msg@example.com>") but we store bare IDs to match outgoing emails
+	const stripBrackets = (s: string) => s.replace(/^</, "").replace(/>$/, "");
+	const inReplyTo = parsedEmail.inReplyTo
+		? stripBrackets(parsedEmail.inReplyTo)
+		: null;
 	const emailReferences = parsedEmail.references
-		? parsedEmail.references.split(/\s+/).filter(Boolean)
+		? parsedEmail.references
+				.split(/\s+/)
+				.filter(Boolean)
+				.map(stripBrackets)
 		: [];
 
 	await stub.createEmail(
@@ -1682,10 +1691,10 @@ async function receiveEmail(
 			recipient: parsedEmail.to[0].address,
 			date: new Date().toISOString(),
 			body: parsedEmail.html || parsedEmail.text || "",
-			in_reply_to: parsedEmail.inReplyTo || null,
+			in_reply_to: inReplyTo,
 			email_references:
 				emailReferences.length > 0 ? JSON.stringify(emailReferences) : null,
-			thread_id: emailReferences[0] || parsedEmail.inReplyTo || messageId,
+			thread_id: emailReferences[0] || inReplyTo || messageId,
 		},
 		attachmentData,
 	);
