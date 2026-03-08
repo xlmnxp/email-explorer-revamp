@@ -1668,6 +1668,11 @@ async function receiveEmail(
 		}
 	}
 
+	// Parse threading headers from incoming email
+	const emailReferences = parsedEmail.references
+		? parsedEmail.references.split(/\s+/).filter(Boolean)
+		: [];
+
 	await stub.createEmail(
 		"inbox",
 		{
@@ -1677,6 +1682,10 @@ async function receiveEmail(
 			recipient: parsedEmail.to[0].address,
 			date: new Date().toISOString(),
 			body: parsedEmail.html || parsedEmail.text || "",
+			in_reply_to: parsedEmail.inReplyTo || null,
+			email_references:
+				emailReferences.length > 0 ? JSON.stringify(emailReferences) : null,
+			thread_id: emailReferences[0] || parsedEmail.inReplyTo || messageId,
 		},
 		attachmentData,
 	);
