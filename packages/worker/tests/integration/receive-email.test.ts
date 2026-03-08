@@ -33,7 +33,7 @@ async function simulateReceiveEmail(rawEmailStr: string) {
 describe("Incoming Email Threading Tests", () => {
 	beforeEach(async () => {
 		await testAuthBeforeAll();
-		await authenticatedFetch("http://local.test/api/v1/debug/create-mailbox");
+		await authenticatedFetch("http://local.test/api/v1/debug/create-mailbox", { method: "POST" });
 	});
 
 	describe("Threading Header Preservation", () => {
