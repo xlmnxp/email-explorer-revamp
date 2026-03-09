@@ -339,8 +339,14 @@ class PostMailbox extends OpenAPIRoute {
 				description: "Mailbox created successfully",
 				...contentJson(MailboxDetailsSchema),
 			},
-			"400": { description: "Bad request", ...contentJson(ErrorResponseSchema) },
-			"409": { description: "Mailbox already exists", ...contentJson(ErrorResponseSchema) },
+			"400": {
+				description: "Bad request",
+				...contentJson(ErrorResponseSchema),
+			},
+			"409": {
+				description: "Mailbox already exists",
+				...contentJson(ErrorResponseSchema),
+			},
 		},
 	};
 
@@ -1272,9 +1278,18 @@ class PostForgotPassword extends OpenAPIRoute {
 				description: "Password reset email sent",
 				...contentJson(SuccessResponseSchema),
 			},
-			"400": { description: "Bad request", ...contentJson(ErrorResponseSchema) },
-			"404": { description: "User not found", ...contentJson(ErrorResponseSchema) },
-			"503": { description: "Account recovery disabled", ...contentJson(ErrorResponseSchema) },
+			"400": {
+				description: "Bad request",
+				...contentJson(ErrorResponseSchema),
+			},
+			"404": {
+				description: "User not found",
+				...contentJson(ErrorResponseSchema),
+			},
+			"503": {
+				description: "Account recovery disabled",
+				...contentJson(ErrorResponseSchema),
+			},
 		},
 	};
 
@@ -1395,9 +1410,18 @@ class PostResetPassword extends OpenAPIRoute {
 				description: "Password reset successfully",
 				...contentJson(SuccessResponseSchema),
 			},
-			"400": { description: "Bad request", ...contentJson(ErrorResponseSchema) },
-			"401": { description: "Invalid or expired token", ...contentJson(ErrorResponseSchema) },
-			"503": { description: "Account recovery disabled", ...contentJson(ErrorResponseSchema) },
+			"400": {
+				description: "Bad request",
+				...contentJson(ErrorResponseSchema),
+			},
+			"401": {
+				description: "Invalid or expired token",
+				...contentJson(ErrorResponseSchema),
+			},
+			"503": {
+				description: "Account recovery disabled",
+				...contentJson(ErrorResponseSchema),
+			},
 		},
 	};
 
@@ -1486,7 +1510,8 @@ class GetAppSettings extends OpenAPIRoute {
 			(config.auth?.registerEnabled !== false && userCount === 0);
 
 		// Account recovery is enabled if the config has accountRecovery with fromEmail
-		const accountRecoveryEnabled = (config.accountRecovery && config.accountRecovery.fromEmail) !== undefined;
+		const accountRecoveryEnabled =
+			config.accountRecovery?.fromEmail !== undefined;
 
 		return c.json({
 			auth: {
@@ -1679,6 +1704,17 @@ async function receiveEmail(
 		}
 	}
 
+	// Parse threading headers from incoming email
+	// Strip angle brackets from message IDs since postal-mime returns raw RFC 2822
+	// values (e.g. "<msg@example.com>") but we store bare IDs to match outgoing emails
+	const stripBrackets = (s: string) => s.replace(/^</, "").replace(/>$/, "");
+	const inReplyTo = parsedEmail.inReplyTo
+		? stripBrackets(parsedEmail.inReplyTo)
+		: null;
+	const emailReferences = parsedEmail.references
+		? parsedEmail.references.split(/\s+/).filter(Boolean).map(stripBrackets)
+		: [];
+
 	await stub.createEmail(
 		"inbox",
 		{
@@ -1688,6 +1724,10 @@ async function receiveEmail(
 			recipient: parsedEmail.to[0].address,
 			date: new Date().toISOString(),
 			body: parsedEmail.html || parsedEmail.text || "",
+			in_reply_to: inReplyTo,
+			email_references:
+				emailReferences.length > 0 ? JSON.stringify(emailReferences) : null,
+			thread_id: emailReferences[0] || inReplyTo || messageId,
 		},
 		attachmentData,
 	);
@@ -1703,7 +1743,7 @@ const defaultOptions: EmailExplorerOptions = {
 export function EmailExplorer(_options: EmailExplorerOptions = {}) {
 	// Merge user options with defaults
 	const options: EmailExplorerOptions = {
-        ..._options,
+		..._options,
 		auth: {
 			...defaultOptions.auth,
 			..._options.auth,
