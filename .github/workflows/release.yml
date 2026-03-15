@@ -64,7 +64,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create GitHub Release
-        if: steps.check.outputs.published == 'false'
         run: |
           VERSION=$(jq -r .version packages/worker/package.json)
           TAG="v${VERSION}"
