@@ -21,6 +21,7 @@ const SessionResponseSchema = z.object({
 	userId: z.string(),
 	email: z.string(),
 	isAdmin: z.boolean(),
+	canCreateMailbox: z.boolean(),
 	expiresAt: z.number(),
 });
 
@@ -28,6 +29,7 @@ const UserResponseSchema = z.object({
 	id: z.string(),
 	email: z.string(),
 	isAdmin: z.boolean(),
+	canCreateMailbox: z.boolean(),
 	createdAt: z.number(),
 	updatedAt: z.number(),
 });
@@ -53,6 +55,7 @@ const RevokeAccessRequestSchema = z.object({
 
 const UpdateUserRequestSchema = z.object({
 	isAdmin: z.boolean().optional(),
+	canCreateMailbox: z.boolean().optional(),
 });
 
 // Helper function to get auth DO
@@ -369,8 +372,53 @@ export class PutUser extends OpenAPIRoute {
 			return c.json({ error: "Admin privileges required" }, 403);
 		}
 
-		// TODO: Implement user update logic in MailboxDO
+		const data = await this.getValidatedData<typeof this.schema>();
+		const { userId } = data.params;
+		const { isAdmin, canCreateMailbox } = data.body;
+
+		const authDO = getAuthDO(c.env);
+
+		if (canCreateMailbox !== undefined) {
+			await authDO.setUserCanCreateMailbox(userId, canCreateMailbox);
+		}
+
+		// TODO: implement isAdmin update if needed
+
 		return c.json({ status: "updated" });
+	}
+}
+
+export class DeleteUser extends OpenAPIRoute {
+	schema = {
+		summary: "Delete a user (admin only)",
+		operationId: "deleteUser",
+		tags: ["Auth - Admin"],
+		request: {
+			params: z.object({ userId: z.string() }),
+		},
+		responses: {
+			"200": { description: "User deleted", ...contentJson(SuccessResponseSchema) },
+			"401": { description: "Unauthorized", ...contentJson(ErrorResponseSchema) },
+			"403": { description: "Forbidden", ...contentJson(ErrorResponseSchema) },
+		},
+	};
+
+	async handle(c: AppContext) {
+		const session = c.get("session");
+		if (!session) return c.json({ error: "Unauthorized" }, 401);
+		if (!session.isAdmin) return c.json({ error: "Admin privileges required" }, 403);
+
+		const data = await this.getValidatedData<typeof this.schema>();
+		const { userId } = data.params;
+
+		// Prevent admin from deleting themselves
+		if (userId === session.userId) {
+			return c.json({ error: "Cannot delete your own account" }, 403);
+		}
+
+		const authDO = getAuthDO(c.env);
+		await authDO.deleteUser(userId);
+		return c.json({ status: "deleted" });
 	}
 }
 

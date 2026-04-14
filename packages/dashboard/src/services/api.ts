@@ -42,6 +42,8 @@ apiClient.interceptors.response.use(
 export default {
 	// Settings
 	getAppSettings: () => apiClient.get("/api/v1/settings"),
+	updateBranding: (branding: { appName?: string; primaryColor?: string; logoUrl?: string }) =>
+		apiClient.put("/api/v1/settings/branding", branding),
 
 	// Auth
 	register: (email: string, password: string) =>
@@ -141,4 +143,8 @@ export default {
 		}),
 	adminRevokeAccess: (userId: string, mailboxId: string) =>
 		apiClient.post("/api/v1/auth/admin/revoke-access", { userId, mailboxId }),
+	adminUpdateUser: (userId: string, data: { canCreateMailbox?: boolean; isAdmin?: boolean }) =>
+		apiClient.put(`/api/v1/auth/admin/users/${userId}`, data),
+	adminDeleteUser: (userId: string) =>
+		apiClient.delete(`/api/v1/auth/admin/users/${userId}`),
 };

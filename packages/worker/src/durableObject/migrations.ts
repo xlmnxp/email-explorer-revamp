@@ -94,4 +94,10 @@ export const authMigrations: Migration[] = [
             CREATE INDEX idx_user_mailboxes_mailbox_id ON user_mailboxes(mailbox_id);
         `,
 	},
+	{
+		name: "2_add_can_create_mailbox",
+		sql: `
+            ALTER TABLE users ADD COLUMN can_create_mailbox INTEGER DEFAULT 0;
+        `,
+	},
 ];

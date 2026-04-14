@@ -13,6 +13,7 @@ export interface Session {
 	userId: string;
 	email: string;
 	isAdmin: boolean;
+	canCreateMailbox: boolean;
 	expiresAt: number;
 }
 
@@ -23,6 +24,7 @@ export const useAuthStore = defineStore("auth", () => {
 
 	const isAuthenticated = computed(() => session.value !== null);
 	const isAdmin = computed(() => session.value?.isAdmin ?? false);
+	const canCreateMailbox = computed(() => session.value?.isAdmin || session.value?.canCreateMailbox || false);
 	const currentUser = computed(() =>
 		session.value
 			? {
@@ -111,6 +113,7 @@ export const useAuthStore = defineStore("auth", () => {
 				...session.value,
 				email: response.data.email,
 				isAdmin: response.data.isAdmin,
+				canCreateMailbox: response.data.canCreateMailbox,
 			};
 			localStorage.setItem("session", JSON.stringify(session.value));
 			return true;
@@ -128,6 +131,7 @@ export const useAuthStore = defineStore("auth", () => {
 		error,
 		isAuthenticated,
 		isAdmin,
+		canCreateMailbox,
 		currentUser,
 		register,
 		login,

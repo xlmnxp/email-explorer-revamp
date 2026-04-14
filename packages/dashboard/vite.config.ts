@@ -13,4 +13,13 @@ export default defineConfig({
 			"@": fileURLToPath(new URL("./src", import.meta.url)),
 		},
 	},
+	server: {
+		proxy: {
+			// Forward all API calls to the wrangler dev worker
+			"/api": {
+				target: "http://localhost:8787",
+				changeOrigin: true,
+			},
+		},
+	},
 });

@@ -6,6 +6,7 @@ import PostalMime from "postal-mime";
 import { z } from "zod";
 import { buildMimeMessage } from "./mime-builder";
 import {
+	DeleteUser,
 	GetMe,
 	GetUsers,
 	PostAdminRegister,
@@ -60,6 +61,12 @@ const ResetPasswordRequestSchema = z.object({
 	newPassword: z.string().min(8),
 });
 
+const BrandingSchema = z.object({
+	appName: z.string().optional(),
+	primaryColor: z.string().optional(),
+	logoUrl: z.string().optional(),
+});
+
 const AppSettingsResponseSchema = z.object({
 	auth: z.object({
 		enabled: z.boolean(),
@@ -68,6 +75,7 @@ const AppSettingsResponseSchema = z.object({
 	accountRecovery: z.object({
 		enabled: z.boolean(),
 	}),
+	branding: BrandingSchema.optional(),
 });
 
 const EmailMetadataSchema = z.object({
@@ -324,9 +332,21 @@ class DeleteMailbox extends OpenAPIRoute {
 	};
 
 	async handle(c: AppContext) {
+		const session = c.get("session");
 		const data = await this.getValidatedData<typeof this.schema>();
 		const { mailboxId } = data.params;
 		const key = `mailboxes/${mailboxId}.json`;
+
+		// Non-admin users must be owner of the mailbox to delete it
+		if (session && !session.isAdmin) {
+			const authId = c.env.MAILBOX.idFromName("AUTH");
+			const authDO = c.env.MAILBOX.get(authId);
+			const userMailboxes = await authDO.getUserMailboxes(session.userId);
+			const access = userMailboxes.find((m) => m.mailboxId === mailboxId);
+			if (!access || access.role !== "owner") {
+				return c.json({ error: "Only the mailbox owner can delete it" }, 403);
+			}
+		}
 
 		const obj = await c.env.BUCKET.head(key);
 		if (!obj) {
@@ -365,6 +385,15 @@ class PostMailbox extends OpenAPIRoute {
 	};
 
 	async handle(c: AppContext) {
+		const session = c.get("session");
+
+		// If auth is enabled, require admin or canCreateMailbox permission
+		if (session) {
+			if (!session.isAdmin && !session.canCreateMailbox) {
+				return c.json({ error: "You do not have permission to create mailboxes" }, 403);
+			}
+		}
+
 		const data = await this.getValidatedData<typeof this.schema>();
 		const { email, name, settings } = data.body;
 
@@ -406,6 +435,13 @@ class PostMailbox extends OpenAPIRoute {
 
 		// Trigger first run of the durable object to initialize database
 		await stub.getFolders();
+
+		// If a non-admin user created this mailbox, grant them owner access
+		if (session && !session.isAdmin) {
+			const authId = c.env.MAILBOX.idFromName("AUTH");
+			const authDO = c.env.MAILBOX.get(authId);
+			await authDO.grantMailboxAccess(session.userId, email, "owner");
+		}
 
 		const response = {
 			id: email,
@@ -1527,6 +1563,17 @@ class GetAppSettings extends OpenAPIRoute {
 		const accountRecoveryEnabled =
 			config.accountRecovery?.fromEmail !== undefined;
 
+		// Read branding from R2
+		let branding: Record<string, string> = {};
+		try {
+			const brandingObj = await c.env.BUCKET.get("app:branding");
+			if (brandingObj) {
+				branding = await brandingObj.json();
+			}
+		} catch {
+			// No branding stored yet
+		}
+
 		return c.json({
 			auth: {
 				enabled: authEnabled,
@@ -1535,7 +1582,41 @@ class GetAppSettings extends OpenAPIRoute {
 			accountRecovery: {
 				enabled: accountRecoveryEnabled,
 			},
+			branding,
 		});
+	}
+}
+
+class PutBrandingSettings extends OpenAPIRoute {
+	schema = {
+		summary: "Update branding settings (admin only)",
+		operationId: "updateBranding",
+		tags: ["Settings"],
+		request: {
+			body: contentJson(BrandingSchema),
+		},
+		responses: {
+			"200": {
+				description: "Branding updated",
+				...contentJson(BrandingSchema),
+			},
+			"403": {
+				description: "Admin access required",
+				...contentJson(ErrorResponseSchema),
+			},
+		},
+	};
+
+	async handle(c: AppContext) {
+		const session = c.get("session");
+		if (!session?.isAdmin) {
+			return c.json({ error: "Admin access required" }, 403);
+		}
+
+		const data = await this.getValidatedData<typeof this.schema>();
+		const branding = data.body;
+		await c.env.BUCKET.put("app:branding", JSON.stringify(branding));
+		return c.json(branding);
 	}
 }
 
@@ -1583,10 +1664,12 @@ function isPublicRoute(pathname: string): boolean {
 		"/api/v1/auth/login",
 		"/api/v1/auth/forgot-password",
 		"/api/v1/auth/reset-password",
-		"/api/v1/settings",
 		"/api/docs",
 		"/api/openapi.json",
 	];
+	// /api/v1/settings is public (GET branding/auth info) but sub-routes like
+	// /api/v1/settings/branding (PUT, admin-only) must go through auth middleware
+	if (pathname === "/api/v1/settings") return true;
 	return publicRoutes.some((route) => pathname.startsWith(route));
 }
 
@@ -1614,11 +1697,13 @@ openapi.post("/api/v1/auth/reset-password", PostResetPassword);
 openapi.post("/api/v1/auth/admin/register", PostAdminRegister);
 openapi.get("/api/v1/auth/admin/users", GetUsers);
 openapi.put("/api/v1/auth/admin/users/:userId", PutUser);
+openapi.delete("/api/v1/auth/admin/users/:userId", DeleteUser);
 openapi.post("/api/v1/auth/admin/grant-access", PostGrantAccess);
 openapi.post("/api/v1/auth/admin/revoke-access", PostRevokeAccess);
 
 // Settings endpoints
 openapi.get("/api/v1/settings", GetAppSettings);
+openapi.put("/api/v1/settings/branding", PutBrandingSettings);
 
 // Existing endpoints
 openapi.post("/api/v1/debug/create-mailbox", CreateDummyMailbox);

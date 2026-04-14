@@ -161,6 +161,7 @@ export class MailboxDO extends DurableObject<Env> {
 			id: userId,
 			email,
 			isAdmin: isFirstUser,
+			canCreateMailbox: false,
 			createdAt: now,
 			updatedAt: now,
 		};
@@ -172,7 +173,7 @@ export class MailboxDO extends DurableObject<Env> {
 
 		const result = this.#qb
 			.select("users")
-			.fields(["id", "email", "password_hash", "is_admin"])
+			.fields(["id", "email", "password_hash", "is_admin", "can_create_mailbox"])
 			.where("email = ?", email)
 			.one();
 
@@ -208,6 +209,7 @@ export class MailboxDO extends DurableObject<Env> {
 			userId: String(user.id),
 			email: String(user.email),
 			isAdmin: user.is_admin === 1,
+			canCreateMailbox: user.can_create_mailbox === 1,
 			expiresAt,
 		};
 	}
@@ -244,7 +246,7 @@ export class MailboxDO extends DurableObject<Env> {
 		// Get user info
 		const userResult = this.#qb
 			.select("users")
-			.fields(["email", "is_admin"])
+			.fields(["email", "is_admin", "can_create_mailbox"])
 			.where("id = ?", String(session.user_id))
 			.one();
 
@@ -255,6 +257,7 @@ export class MailboxDO extends DurableObject<Env> {
 			userId: String(session.user_id),
 			email: String(userResult.results.email),
 			isAdmin: userResult.results.is_admin === 1,
+			canCreateMailbox: userResult.results.can_create_mailbox === 1,
 			expiresAt,
 		};
 	}
@@ -282,7 +285,7 @@ export class MailboxDO extends DurableObject<Env> {
 
 		const result = this.#qb
 			.select("users")
-			.fields(["id", "email", "is_admin", "created_at", "updated_at"])
+			.fields(["id", "email", "is_admin", "can_create_mailbox", "created_at", "updated_at"])
 			.execute();
 
 		return (
@@ -290,6 +293,7 @@ export class MailboxDO extends DurableObject<Env> {
 				id: String(user.id),
 				email: String(user.email),
 				isAdmin: user.is_admin === 1,
+				canCreateMailbox: user.can_create_mailbox === 1,
 				createdAt: Number(user.created_at),
 				updatedAt: Number(user.updated_at),
 			})) ?? []
@@ -302,7 +306,7 @@ export class MailboxDO extends DurableObject<Env> {
 
 		const result = this.#qb
 			.select("users")
-			.fields(["id", "email", "is_admin", "created_at", "updated_at"])
+			.fields(["id", "email", "is_admin", "can_create_mailbox", "created_at", "updated_at"])
 			.where("email = ?", email)
 			.execute();
 
@@ -315,9 +319,29 @@ export class MailboxDO extends DurableObject<Env> {
 			id: String(user.id),
 			email: String(user.email),
 			isAdmin: user.is_admin === 1,
+			canCreateMailbox: user.can_create_mailbox === 1,
 			createdAt: Number(user.created_at),
 			updatedAt: Number(user.updated_at),
 		};
+	}
+
+	// Auth operation: set canCreateMailbox permission
+	async setUserCanCreateMailbox(userId: string, canCreate: boolean): Promise<void> {
+		if (!this.#isAuthDO) throw new Error("Not an auth DO");
+
+		this.#qb
+			.update({
+				tableName: "users",
+				data: {
+					can_create_mailbox: canCreate ? 1 : 0,
+					updated_at: Date.now(),
+				},
+				where: {
+					conditions: "id = ?",
+					params: [userId],
+				},
+			})
+			.execute();
 	}
 
 	// Auth operation: update user password
@@ -394,6 +418,15 @@ export class MailboxDO extends DurableObject<Env> {
 				role: String(row.role),
 			})) ?? []
 		);
+	}
+
+	// Auth operation: delete a user
+	async deleteUser(userId: string): Promise<void> {
+		if (!this.#isAuthDO) throw new Error("Not an auth DO");
+
+		this.#qb.delete({ tableName: "sessions", where: { conditions: "user_id = ?", params: [userId] } }).execute();
+		this.#qb.delete({ tableName: "user_mailboxes", where: { conditions: "user_id = ?", params: [userId] } }).execute();
+		this.#qb.delete({ tableName: "users", where: { conditions: "id = ?", params: [userId] } }).execute();
 	}
 
 	async getEmails(options: GetEmailsOptions = {}) {

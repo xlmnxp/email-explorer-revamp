@@ -1,5 +1,8 @@
 <template>
-  <div class="rich-text-editor border border-gray-300 dark:border-gray-600 rounded-xl overflow-hidden bg-gray-50 dark:bg-gray-900/50">
+  <div class="rich-text-editor border border-gray-300 dark:border-gray-600 overflow-hidden bg-gray-50 dark:bg-gray-900/50"
+  :class="{
+    'border-0': props.borderLess
+  }">
     <!-- Toolbar -->
     <div v-if="editor" class="toolbar bg-white dark:bg-gray-800 border-b border-gray-300 dark:border-gray-600 p-2 flex flex-wrap gap-1">
       <!-- Text Formatting -->
@@ -344,6 +347,7 @@ import { onBeforeUnmount, ref, watch } from "vue";
 
 const props = defineProps<{
 	modelValue: string;
+  borderLess: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -523,21 +527,6 @@ onBeforeUnmount(() => {
   color: rgb(79 70 229);
 }
 
-@media (prefers-color-scheme: dark) {
-  .toolbar-btn {
-    color: rgb(209 213 219);
-  }
-  
-  .toolbar-btn:hover {
-    background-color: rgb(55 65 81);
-  }
-  
-  .toolbar-btn.is-active {
-    background-color: rgb(49 46 129);
-    color: rgb(165 180 252);
-  }
-}
-
 /* TipTap Editor Styles */
 :deep(.ProseMirror) {
   outline: none;
@@ -545,117 +534,34 @@ onBeforeUnmount(() => {
   color: rgb(17 24 39);
 }
 
-:deep(.ProseMirror p) {
-  margin-bottom: 0.75rem;
-}
+:deep(.ProseMirror p) { margin-bottom: 0.75rem; }
+:deep(.ProseMirror h1) { font-size: 1.875rem; font-weight: bold; margin-bottom: 1rem; }
+:deep(.ProseMirror h2) { font-size: 1.5rem; font-weight: bold; margin-bottom: 0.75rem; }
+:deep(.ProseMirror h3) { font-size: 1.25rem; font-weight: bold; margin-bottom: 0.5rem; }
+:deep(.ProseMirror ul), :deep(.ProseMirror ol) { padding-left: 1.5rem; margin-bottom: 0.75rem; }
+:deep(.ProseMirror ul) { list-style-type: disc; }
+:deep(.ProseMirror ol) { list-style-type: decimal; }
+:deep(.ProseMirror blockquote) { border-left: 4px solid rgb(209 213 219); padding-left: 1rem; font-style: italic; margin: 1rem 0; }
+:deep(.ProseMirror code) { background-color: rgb(229 231 235); padding: 0.125rem 0.25rem; border-radius: 0.25rem; font-size: 0.875rem; font-family: monospace; }
+:deep(.ProseMirror pre) { background-color: rgb(229 231 235); padding: 1rem; border-radius: 0.5rem; overflow-x: auto; margin: 1rem 0; }
+:deep(.ProseMirror pre code) { background-color: transparent; padding: 0; }
+:deep(.ProseMirror a) { color: rgb(37 99 235); text-decoration: underline; }
+:deep(.ProseMirror a:hover) { color: rgb(29 78 216); }
+:deep(.ProseMirror img) { max-width: 100%; height: auto; border-radius: 0.5rem; }
+:deep(.ProseMirror hr) { margin: 1rem 0; border-color: rgb(209 213 219); }
+</style>
 
-:deep(.ProseMirror h1) {
-  font-size: 1.875rem;
-  font-weight: bold;
-  margin-bottom: 1rem;
-}
+<!-- Non-scoped block so .dark parent selector works across the shadow boundary -->
+<style>
+.dark .toolbar-btn { color: rgb(209 213 219); }
+.dark .toolbar-btn:hover { background-color: rgb(55 65 81); }
+.dark .toolbar-btn.is-active { background-color: rgb(49 46 129); color: rgb(165 180 252); }
 
-:deep(.ProseMirror h2) {
-  font-size: 1.5rem;
-  font-weight: bold;
-  margin-bottom: 0.75rem;
-}
-
-:deep(.ProseMirror h3) {
-  font-size: 1.25rem;
-  font-weight: bold;
-  margin-bottom: 0.5rem;
-}
-
-:deep(.ProseMirror ul),
-:deep(.ProseMirror ol) {
-  padding-left: 1.5rem;
-  margin-bottom: 0.75rem;
-}
-
-:deep(.ProseMirror ul) {
-  list-style-type: disc;
-}
-
-:deep(.ProseMirror ol) {
-  list-style-type: decimal;
-}
-
-:deep(.ProseMirror blockquote) {
-  border-left: 4px solid rgb(209 213 219);
-  padding-left: 1rem;
-  font-style: italic;
-  margin: 1rem 0;
-}
-
-:deep(.ProseMirror code) {
-  background-color: rgb(229 231 235);
-  padding: 0.125rem 0.25rem;
-  border-radius: 0.25rem;
-  font-size: 0.875rem;
-  font-family: monospace;
-}
-
-:deep(.ProseMirror pre) {
-  background-color: rgb(229 231 235);
-  padding: 1rem;
-  border-radius: 0.5rem;
-  overflow-x: auto;
-  margin: 1rem 0;
-}
-
-:deep(.ProseMirror pre code) {
-  background-color: transparent;
-  padding: 0;
-}
-
-:deep(.ProseMirror a) {
-  color: rgb(37 99 235);
-  text-decoration: underline;
-}
-
-:deep(.ProseMirror a:hover) {
-  color: rgb(29 78 216);
-}
-
-:deep(.ProseMirror img) {
-  max-width: 100%;
-  height: auto;
-  border-radius: 0.5rem;
-}
-
-:deep(.ProseMirror hr) {
-  margin: 1rem 0;
-  border-color: rgb(209 213 219);
-}
-
-@media (prefers-color-scheme: dark) {
-  :deep(.ProseMirror) {
-    color: rgb(243 244 246);
-  }
-  
-  :deep(.ProseMirror blockquote) {
-    border-left-color: rgb(75 85 99);
-  }
-  
-  :deep(.ProseMirror code) {
-    background-color: rgb(55 65 81);
-  }
-  
-  :deep(.ProseMirror pre) {
-    background-color: rgb(55 65 81);
-  }
-  
-  :deep(.ProseMirror a) {
-    color: rgb(96 165 250);
-  }
-  
-  :deep(.ProseMirror a:hover) {
-    color: rgb(147 197 253);
-  }
-  
-  :deep(.ProseMirror hr) {
-    border-color: rgb(75 85 99);
-  }
-}
+.dark .ProseMirror { color: rgb(243 244 246); }
+.dark .ProseMirror blockquote { border-left-color: rgb(75 85 99); }
+.dark .ProseMirror code { background-color: rgb(55 65 81); }
+.dark .ProseMirror pre { background-color: rgb(55 65 81); }
+.dark .ProseMirror a { color: rgb(96 165 250); }
+.dark .ProseMirror a:hover { color: rgb(147 197 253); }
+.dark .ProseMirror hr { border-color: rgb(75 85 99); }
 </style>

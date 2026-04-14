@@ -1,11 +1,11 @@
 /**
- * For more details on how to configure Wrangler, refer to:
- * https://developers.cloudflare.com/workers/wrangler/configuration/
+ * Local development override — points assets at the locally-built dashboard.
+ * Use: npx wrangler dev --config wrangler.dev.jsonc
  */
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"compatibility_date": "2025-11-28",
-	"main": "index.ts",
+	"main": "src/index.ts",
 	"name": "email-explorer",
 	"upload_source_maps": true,
 	"observability": {
@@ -13,7 +13,7 @@
 	},
 	"compatibility_flags": ["nodejs_compat", "enable_email_sending_queuing"],
 	"assets": {
-		"directory": "../../dashboard/dist",
+		"directory": "../packages/dashboard/dist",
 		"binding": "ASSETS",
 		"html_handling": "auto-trailing-slash",
 		"not_found_handling": "single-page-application",
@@ -23,8 +23,7 @@
 		{
 			"binding": "BUCKET",
 			"bucket_name": "email-explorer",
-			"preview_bucket_name": "email-explorer",
-//			"remote": true
+			"local_bucket_path": ".wrangler/state/r2/email-explorer"
 		}
 	],
 	"send_email": [

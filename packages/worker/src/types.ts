@@ -13,6 +13,7 @@ export interface Session {
 	userId: string;
 	email: string;
 	isAdmin: boolean;
+	canCreateMailbox: boolean;
 	expiresAt: number;
 }
 
@@ -20,6 +21,7 @@ export interface User {
 	id: string;
 	email: string;
 	isAdmin: boolean;
+	canCreateMailbox: boolean;
 	createdAt: number;
 	updatedAt: number;
 }
