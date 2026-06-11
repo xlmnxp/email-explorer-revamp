@@ -104,7 +104,7 @@
         <form @submit.prevent="handleRegisterUser" class="px-4 py-4">
           <div v-if="registerError" class="mb-3 text-xs text-red-600 dark:text-red-400">{{ registerError }}</div>
           <div v-if="registerSuccess" class="mb-3 text-xs text-green-600 dark:text-green-400">{{ registerSuccess }}</div>
-          <div class="flex items-end gap-3">
+          <div class="flex flex-col sm:flex-row sm:items-end gap-3">
             <div class="flex-1">
               <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Email</label>
               <input v-model="newUser.email" type="email" required class="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded focus:outline-none" placeholder="user@example.com" />

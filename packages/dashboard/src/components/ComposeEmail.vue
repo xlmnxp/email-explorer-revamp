@@ -2,8 +2,8 @@
   <transition name="compose-slide">
     <div
       v-if="uiStore.isComposeOpen"
-      class="fixed bottom-0 right-6 w-[520px] z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 border-b-0 rounded-t shadow-lg flex flex-col"
-      :style="uiStore.isComposeMinimized ? 'height: 40px; overflow: hidden' : 'height: 480px'"
+      class="fixed bottom-0 right-0 sm:right-6 w-full sm:w-[520px] z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 border-b-0 rounded-t shadow-lg flex flex-col"
+      :style="uiStore.isComposeMinimized ? 'height: 40px; overflow: hidden' : 'height: min(480px, 90vh)'"
     >
       <!-- Panel header -->
       <div

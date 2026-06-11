@@ -18,8 +18,15 @@ export const useUIStore = defineStore("ui", {
 		isDarkMode: localStorage.getItem("darkMode") !== null
 			? localStorage.getItem("darkMode") === "true"
 			: window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? false,
+		isSidebarOpen: false,
 	}),
 	actions: {
+		toggleSidebar() {
+			this.isSidebarOpen = !this.isSidebarOpen;
+		},
+		closeSidebar() {
+			this.isSidebarOpen = false;
+		},
 		openComposeModal(options?: ComposeOptions) {
 			this.composeOptions = options || { mode: "new", originalEmail: null };
 			this.isComposeOpen = true;

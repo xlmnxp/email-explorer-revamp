@@ -1,5 +1,15 @@
 <template>
-  <aside class="w-52 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col flex-shrink-0">
+  <!-- Mobile backdrop -->
+  <div
+    v-if="uiStore.isSidebarOpen"
+    @click="uiStore.closeSidebar()"
+    class="fixed inset-0 bg-black/40 z-30 md:hidden"
+  ></div>
+
+  <aside
+    class="w-52 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col flex-shrink-0 fixed inset-y-0 left-0 z-40 transition-transform duration-200 ease-in-out md:static md:translate-x-0"
+    :class="uiStore.isSidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+  >
     <!-- Logo / App name -->
     <div class="px-3 pt-3 pb-2 flex items-center gap-2 border-b border-gray-100 dark:border-gray-700 mb-1">
       <img v-if="branding.logoUrl" :src="branding.logoUrl" class="h-6 w-auto max-w-[140px] object-contain" :alt="branding.appName || 'Email Explorer'" :title="branding.appName || 'Email Explorer'" />
@@ -36,6 +46,7 @@
         v-for="item in defaultFolderItems"
         :key="item.folder"
         :to="{ name: 'EmailList', params: { mailboxId: route.params.mailboxId, folder: item.folder } }"
+        @click="uiStore.closeSidebar()"
         class="flex items-center gap-2.5 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border-l-2 border-transparent transition-colors"
         :active-class="item.folder === 'trash' ? 'border-red-500 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400' : 'nav-active'"
       >
@@ -61,6 +72,7 @@
           v-for="folder in customFolders"
           :key="folder.id"
           :to="{ name: 'EmailList', params: { mailboxId: route.params.mailboxId, folder: folder.id } }"
+          @click="uiStore.closeSidebar()"
           class="flex items-center gap-2.5 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border-l-2 border-transparent transition-colors"
           active-class="nav-active"
         >

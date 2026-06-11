@@ -1,7 +1,7 @@
 <template>
   <div v-if="email" class="flex flex-col h-full bg-white dark:bg-gray-800">
     <!-- Toolbar -->
-    <div class="flex items-center gap-1 px-4 h-10 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/80 flex-shrink-0">
+    <div class="flex items-center gap-1 px-4 h-10 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/80 flex-shrink-0 overflow-x-auto">
       <!-- Back -->
       <button
         @click="router.back()"
@@ -87,19 +87,19 @@
     </div>
 
     <!-- Email header -->
-    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+    <div class="px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
       <h1 class="text-base font-semibold text-gray-900 dark:text-white mb-3">{{ email.subject }}</h1>
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-3">
+      <div class="flex items-start sm:items-center justify-between gap-2 flex-wrap">
+        <div class="flex items-center gap-3 min-w-0">
           <div class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
             {{ email.sender.charAt(0).toUpperCase() }}
           </div>
-          <div>
-            <p class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ email.sender }}</p>
-            <p class="text-xs text-gray-500 dark:text-gray-400">To: {{ email.recipient }}</p>
+          <div class="min-w-0">
+            <p class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{{ email.sender }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 truncate">To: {{ email.recipient }}</p>
           </div>
         </div>
-        <p class="text-xs text-gray-400 dark:text-gray-500">{{ email.date }}</p>
+        <p class="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0">{{ email.date }}</p>
       </div>
     </div>
 
