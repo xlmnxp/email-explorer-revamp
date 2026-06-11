@@ -1,6 +1,6 @@
-import { EmailExplorer } from "email-explorer";
+import { EmailExplorer } from "btrmail";
 
-export { MailboxDO } from "email-explorer";
+export { MailboxDO } from "btrmail";
 
 // RECOMMENDED: Smart Mode (Default)
 // - First user to register automatically becomes admin
