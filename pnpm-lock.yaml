@@ -151,9 +151,6 @@ importers:
 
   packages/worker/dev:
     devDependencies:
-      email-explorer:
-        specifier: workspace:*
-        version: link:..
       wrangler:
         specifier: ^4.53.0
         version: 4.53.0(@cloudflare/workers-types@4.20251128.0)
